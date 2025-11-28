@@ -1,6 +1,8 @@
 
+
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import { LocationData, Route, Trail } from '../types';
 
@@ -179,11 +181,17 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ locations, selectedLocation, on
         scrollWheelZoom={true}
         className="w-full h-full outline-none"
         zoomControl={false}
+        preferCanvas={true}
+        updateWhenIdle={true}
+        keepBuffer={2}
       >
-        {/* CartoDB Voyager - Accessible, clean, supports high zoom */}
+        {/* Stadia Maps - Fast, clean basemap */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
+          maxZoom={20}
+          updateWhenIdle={true}
+          keepBuffer={2}
         />
 
         {/* Home Base Marker */}
@@ -205,8 +213,16 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ locations, selectedLocation, on
           </Marker>
         )}
 
-        {/* Location Markers */}
-        {locationMarkers}
+        {/* Location Markers with Clustering */}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={50}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+          zoomToBoundsOnClick={true}
+        >
+          {locationMarkers}
+        </MarkerClusterGroup>
 
         {/* AI Route Visualization */}
         {routeMarkers}
