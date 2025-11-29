@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { APIProvider, Map, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, AdvancedMarker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { LocationData, Route, Trail } from '../types';
 
 interface MapDisplayProps {
@@ -37,18 +37,19 @@ const MapContent: React.FC<Omit<MapDisplayProps, 'locations'> & { locations: Loc
   }, [selectedLocation, map]);
 
   // Fit bounds for routes/trails
+  const coreLibrary = useMapsLibrary('core');
   React.useEffect(() => {
-    if (!map) return;
+    if (!map || !coreLibrary) return;
 
     const steps = activeRoute?.steps || activeTrail?.steps;
     if (steps && steps.length > 0) {
-      const bounds = new google.maps.LatLngBounds();
+      const bounds = new coreLibrary.LatLngBounds();
       steps.forEach(step => {
         bounds.extend({ lat: step.coordinates[0], lng: step.coordinates[1] });
       });
       map.fitBounds(bounds, 50);
     }
-  }, [activeRoute, activeTrail, map]);
+  }, [activeRoute, activeTrail, map, coreLibrary]);
 
   const handleMarkerClick = useCallback((location: LocationData) => {
     setOpenInfoWindow(location.id);
@@ -189,6 +190,59 @@ const MapContent: React.FC<Omit<MapDisplayProps, 'locations'> & { locations: Loc
   );
 };
 
+
+
+// Internal component to handle Directions API
+const Directions: React.FC<{ activeRoute: Route | null; activeTrail: Trail | null }> = ({ activeRoute, activeTrail }) => {
+  const map = useMap();
+  const routesLibrary = useMapsLibrary('routes');
+  const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>();
+  const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>();
+
+  // Initialize services
+  React.useEffect(() => {
+    if (!routesLibrary || !map) return;
+    setDirectionsService(new routesLibrary.DirectionsService());
+    setDirectionsRenderer(new routesLibrary.DirectionsRenderer({ map, suppressMarkers: true, polylineOptions: { strokeColor: '#2563eb', strokeWeight: 5 } }));
+  }, [routesLibrary, map]);
+
+  // Calculate Route
+  React.useEffect(() => {
+    if (!directionsService || !directionsRenderer) return;
+
+    const steps = activeRoute?.steps || activeTrail?.steps;
+
+    if (!steps || steps.length < 2) {
+      directionsRenderer.setMap(null);
+      return;
+    }
+
+    directionsRenderer.setMap(map);
+
+    const origin = { lat: steps[0].coordinates[0], lng: steps[0].coordinates[1] };
+    const destination = { lat: steps[steps.length - 1].coordinates[0], lng: steps[steps.length - 1].coordinates[1] };
+
+    const waypoints = steps.slice(1, -1).map(step => ({
+      location: { lat: step.coordinates[0], lng: step.coordinates[1] },
+      stopover: true
+    }));
+
+    directionsService.route({
+      origin,
+      destination,
+      waypoints,
+      travelMode: 'WALKING' as google.maps.TravelMode
+    }).then(response => {
+      directionsRenderer.setDirections(response);
+    }).catch(e => {
+      console.error("Directions request failed", e);
+    });
+
+  }, [directionsService, directionsRenderer, activeRoute, activeTrail, map]);
+
+  return null;
+};
+
 const MapDisplay: React.FC<MapDisplayProps> = (props) => {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY || '';
 
@@ -217,6 +271,7 @@ const MapDisplay: React.FC<MapDisplayProps> = (props) => {
           style={{ width: '100%', height: '100%' }}
         >
           <MapContent {...props} />
+          <Directions activeRoute={props.activeRoute} activeTrail={props.activeTrail} />
         </Map>
       </APIProvider>
     </div>

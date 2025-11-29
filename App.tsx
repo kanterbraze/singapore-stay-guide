@@ -174,15 +174,7 @@ function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-100 font-sans">
 
-      {/* Mobile Toggle Buttons */}
-      <div className="md:hidden fixed top-4 left-4 z-50 flex gap-2">
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-3 bg-white rounded-full shadow-lg text-gray-700 active:scale-95 transition-transform border border-gray-100"
-        >
-          {isSidebarOpen ? <MapIcon size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
+
 
       {/* AI Float Button (Mobile only when chat closed) */}
       {!isChatOpen && (
@@ -197,10 +189,15 @@ function App() {
       )}
 
       {/* Sidebar Container */}
+      {/* Sidebar Container (Bottom Sheet on Mobile, Sidebar on Desktop) */}
       <div className={`
-        fixed inset-y-0 left-0 transform transition-transform duration-300 ease-in-out z-30
-        w-full md:relative md:w-auto md:translate-x-0 h-full
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        fixed z-30 transition-all duration-300 ease-in-out shadow-2xl
+        md:relative md:inset-auto md:w-auto md:h-full md:shadow-none md:translate-x-0
+        ${isSidebarOpen
+          ? 'inset-x-0 bottom-0 h-[85vh] rounded-t-2xl md:rounded-none' // Expanded Mobile
+          : 'inset-x-0 bottom-0 h-24 rounded-t-2xl md:rounded-none md:w-0 md:overflow-hidden' // Collapsed Mobile (show header) / Desktop Hidden
+        }
+        md:block
       `}>
         <Sidebar
           locations={allLocations}
@@ -222,6 +219,7 @@ function App() {
           onMainTabChange={setMainTab}
           activeListTab={listTab}
           onListTabChange={setListTab}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
       </div>
 

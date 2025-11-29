@@ -101,30 +101,51 @@ async function fetchPlacePhoto(placeName) {
     }
 }
 
+async function downloadImage(url, filepath) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+    const buffer = await response.arrayBuffer();
+    fs.writeFileSync(filepath, Buffer.from(buffer));
+}
+
 async function main() {
-    console.log('🚀 Starting Google Places photo fetch...\n');
+    console.log('🚀 Starting Google Places photo fetch & download...\n');
 
     const results = {};
+    const publicDir = path.join(__dirname, '../public/places');
+
+    if (!fs.existsSync(publicDir)) {
+        fs.mkdirSync(publicDir, { recursive: true });
+    }
 
     for (const location of locations) {
         const photoUrl = await fetchPlacePhoto(location.name);
         if (photoUrl) {
-            results[location.id] = photoUrl;
+            const filename = `${location.id}.jpg`;
+            const filepath = path.join(publicDir, filename);
+
+            try {
+                await downloadImage(photoUrl, filepath);
+                console.log(`  💾 Saved to public/places/${filename}`);
+                // Store the local path relative to public root
+                results[location.id] = `/singapore-stay-guide/places/${filename}`;
+            } catch (e) {
+                console.error(`  ❌ Failed to download image for ${location.name}:`, e.message);
+            }
         }
         // Be nice to the API - add a small delay
         await new Promise(resolve => setTimeout(resolve, 200));
     }
 
-    console.log(`\n✅ Fetched ${Object.keys(results).length} photos out of ${locations.length} locations\n`);
+    console.log(`\n✅ Processed ${Object.keys(results).length} photos out of ${locations.length} locations\n`);
 
-    // Save results to a JSON file
+    // Save results to a JSON file (for reference, though we can just infer paths now)
     const outputPath = path.join(__dirname, '../photo-urls.json');
     fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
 
     console.log(`📝 Results saved to: photo-urls.json`);
     console.log('\nNext steps:');
-    console.log('1. Review the photo-urls.json file');
-    console.log('2. Update constants.ts with these URLs');
+    console.log('1. Update constants.ts to use these local paths');
 }
 
 main().catch(console.error);
