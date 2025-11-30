@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize Gemini - using API_KEY to match Vercel environment variable
+const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
 // Tool Definitions
 const suggestRouteTool = {
