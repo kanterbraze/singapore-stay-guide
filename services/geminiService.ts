@@ -137,6 +137,7 @@ export interface GeminiResponse {
 }
 
 const PROXY_URL = import.meta.env.VITE_GEMINI_PROXY_URL;
+console.log('🔍 PROXY_URL detected:', PROXY_URL);
 
 export const sendMessageToGemini = async (chat: Chat, message: string, history: any[] = [], existingLocations: LocationData[] = []): Promise<GeminiResponse> => {
   // PROXY MODE (Secure)
