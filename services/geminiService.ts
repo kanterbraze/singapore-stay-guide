@@ -6,7 +6,12 @@ let aiClient: GoogleGenAI | null = null;
 
 const getClient = (): GoogleGenAI => {
   if (!aiClient) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error('Gemini API key not configured. Set VITE_GEMINI_PROXY_URL or API_KEY in .env.local');
+    }
+    console.warn('⚠️ Using direct Gemini API mode. For production, set VITE_GEMINI_PROXY_URL to use secure backend proxy.');
+    aiClient = new GoogleGenAI({ apiKey });
   }
   return aiClient;
 };
@@ -57,8 +62,8 @@ const suggestPlacesTool: FunctionDeclaration = {
           properties: {
             name: { type: Type.STRING },
             description: { type: Type.STRING },
-            category: { 
-              type: Type.STRING, 
+            category: {
+              type: Type.STRING,
               enum: ['Food (Local Hawker)', 'Food (Restaurants)', 'Hiking, Nature', 'Places of Interests', 'History', 'Events & Activities']
             },
             latitude: { type: Type.NUMBER },
@@ -82,11 +87,11 @@ const suggestPlacesTool: FunctionDeclaration = {
 
 export const createTravelChat = (locations: LocationData[]): Chat => {
   const client = getClient();
-  
+
   // Construct a system instruction that gives the model context about the "Sheet" data
   // This helps it avoid duplicating existing curated locations
   const existingNames = locations.map(l => l.name).join(', ');
-  
+
   const systemInstruction = `
     You are an expert Singapore Travel Planner and Local Insider.
     
@@ -131,7 +136,34 @@ export interface GeminiResponse {
   generatedLocations?: LocationData[];
 }
 
-export const sendMessageToGemini = async (chat: Chat, message: string): Promise<GeminiResponse> => {
+const PROXY_URL = import.meta.env.VITE_GEMINI_PROXY_URL;
+
+export const sendMessageToGemini = async (chat: Chat, message: string, history: any[] = [], existingLocations: LocationData[] = []): Promise<GeminiResponse> => {
+  // PROXY MODE (Secure)
+  if (PROXY_URL) {
+    try {
+      const response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          history: history.map(h => ({
+            role: h.role,
+            parts: [{ text: h.parts[0].text }] // Simplify history for transport
+          })),
+          existingLocations: existingLocations.map(l => l.name).join(', ')
+        })
+      });
+
+      if (!response.ok) throw new Error('Proxy call failed');
+      return await response.json();
+    } catch (error) {
+      console.error("Proxy Error:", error);
+      throw error;
+    }
+  }
+
+  // DIRECT MODE (Dev/Legacy)
   try {
     let response: GenerateContentResponse = await chat.sendMessage({ message });
     let routeData: Route | undefined;
@@ -139,10 +171,10 @@ export const sendMessageToGemini = async (chat: Chat, message: string): Promise<
 
     // Check for function calls
     const functionCalls = response.functionCalls;
-    
+
     if (functionCalls && functionCalls.length > 0) {
       const call = functionCalls[0];
-      
+
       if (call.name === 'suggest_route') {
         const args = call.args as any;
         routeData = {
@@ -156,12 +188,12 @@ export const sendMessageToGemini = async (chat: Chat, message: string): Promise<
         };
 
         response = await chat.sendMessage({
-            message: [{
-                functionResponse: {
-                    name: 'suggest_route',
-                    response: { result: "Route displayed on map successfully." }
-                }
-            }]
+          message: [{
+            functionResponse: {
+              name: 'suggest_route',
+              response: { result: "Route displayed on map successfully." }
+            }
+          }]
         });
       } else if (call.name === 'suggest_places') {
         const args = call.args as any;
@@ -182,12 +214,12 @@ export const sendMessageToGemini = async (chat: Chat, message: string): Promise<
 
         response = await chat.sendMessage({
           message: [{
-              functionResponse: {
-                  name: 'suggest_places',
-                  response: { result: `Found ${generatedLocations?.length} places matching the theme.` }
-              }
+            functionResponse: {
+              name: 'suggest_places',
+              response: { result: `Found ${generatedLocations?.length} places matching the theme.` }
+            }
           }]
-      });
+        });
       }
     }
 
@@ -204,42 +236,67 @@ export const sendMessageToGemini = async (chat: Chat, message: string): Promise<
 };
 
 // New function to resolve user input for Home Base
-export const resolveLocation = async (query: string): Promise<{name: string, coordinates: [number, number]} | null> => {
-    const client = getClient();
-    const prompt = `
+export const resolveLocation = async (query: string): Promise<{ name: string, coordinates: [number, number] } | null> => {
+  const prompt = `
       Identify the location '${query}' in Singapore. 
       IMPORTANT: If the input consists of 6 digits (e.g., 123456), treat it as a Singapore Postal Code.
-      Return its official name and precise latitude/longitude coordinates.
+      Return ONLY a JSON object with: { "name": "Official Name", "latitude": 1.23, "longitude": 103.45 }
     `;
-    
-    try {
-        const response = await client.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        name: { type: Type.STRING },
-                        latitude: { type: Type.NUMBER },
-                        longitude: { type: Type.NUMBER },
-                    },
-                    required: ['name', 'latitude', 'longitude']
-                }
-            }
-        });
 
-        if (response.text) {
-            const data = JSON.parse(response.text);
-            return {
-                name: data.name,
-                coordinates: [data.latitude, data.longitude]
-            };
-        }
-        return null;
+  // PROXY MODE
+  if (PROXY_URL) {
+    try {
+      const response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: prompt })
+      });
+      const data = await response.json();
+      // The proxy returns { text: "JSON string" }
+      // We need to parse the text content which might be wrapped in markdown code blocks
+      let jsonStr = data.text;
+      jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+      const result = JSON.parse(jsonStr);
+      return {
+        name: result.name,
+        coordinates: [result.latitude, result.longitude]
+      };
     } catch (e) {
-        console.error("Error resolving location:", e);
-        return null;
+      console.error("Proxy Resolve Error:", e);
+      return null;
     }
+  }
+
+  // DIRECT MODE
+  const client = getClient();
+  try {
+    const response = await client.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            latitude: { type: Type.NUMBER },
+            longitude: { type: Type.NUMBER },
+          },
+          required: ['name', 'latitude', 'longitude']
+        }
+      }
+    });
+
+    if (response.text) {
+      const data = JSON.parse(response.text);
+      return {
+        name: data.name,
+        coordinates: [data.latitude, data.longitude]
+      };
+    }
+    return null;
+  } catch (e) {
+    console.error("Error resolving location:", e);
+    return null;
+  }
 };

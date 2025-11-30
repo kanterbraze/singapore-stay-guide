@@ -12,9 +12,10 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(env.GOOGLE_MAPS_API_KEY)
+      'process.env.GOOGLE_MAPS_API_KEY': JSON.stringify(env.GOOGLE_MAPS_API_KEY),
+      // Only inject Gemini API key in development mode for localhost testing
+      // In production, this will be undefined and force use of the proxy
+      'process.env.API_KEY': mode === 'development' ? JSON.stringify(env.GEMINI_API_KEY) : 'undefined',
     },
     resolve: {
       alias: {

@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure Google Places Autocomplete dropdown is visible above other z-index elements */
+.pac-container {
+  z-index: 9999 !important;
+}

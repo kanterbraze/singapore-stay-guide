@@ -22,7 +22,11 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return d.toFixed(1) + " km";
 };
 
+import { APIProvider } from '@vis.gl/react-google-maps';
+
 function App() {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY || '';
+
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<LocationCategory | 'All'>('All');
   const [currentRoute, setCurrentRoute] = useState<Route | null>(null);
@@ -33,7 +37,7 @@ function App() {
 
   // Navigation State (Lifted from Sidebar)
   const [mainTab, setMainTab] = useState<MainTab>('explore');
-  const [listTab, setListTab] = useState<ListTab>('curated');
+  const [activeListTabs, setActiveListTabs] = useState<ListTab[]>(['curated']);
 
   // Persisted State
   const [homeBase, setHomeBase] = useState<LocationData | null>(() => {
@@ -93,10 +97,23 @@ function App() {
     }));
   }, [generatedLocations, homeBase]);
 
+  // Debug: Log state changes
+  React.useEffect(() => {
+    console.log('📊 State Update: selectedLocation =', selectedLocation?.id, selectedLocation?.name);
+    console.log('📊 State Update: isSidebarOpen =', isSidebarOpen);
+  }, [selectedLocation, isSidebarOpen]);
+
   const handleSelectLocation = React.useCallback((location: LocationData) => {
+    console.log('🎯 App.tsx: handleSelectLocation called with:', location.id, location.name);
     setSelectedLocation(location);
-    setActiveTrail(null); // Clear active trail so standard map view takes precedence
-    setCurrentRoute(null); // Clear active route so standard map view takes precedence
+
+    // Only clear trail/route if this is NOT a trail waypoint
+    const isTrailWaypoint = location.id.startsWith('step-');
+    if (!isTrailWaypoint) {
+      setActiveTrail(null); // Clear active trail so standard map view takes precedence
+      setCurrentRoute(null); // Clear active route so standard map view takes precedence
+    }
+
     setIsSidebarOpen(true); // Open sidebar on mobile when marker clicked
   }, []);
 
@@ -139,15 +156,51 @@ function App() {
     if (uniqueNew.length > 0) {
       setGeneratedLocations(prev => [...prev, ...uniqueNew]);
 
-      // NAVIGATE: Switch to Explore -> Generated tab
+      // NAVIGATE: Switch to Explore -> Ensure Generated is active
       setMainTab('explore');
-      setListTab('generated');
+      setActiveListTabs(prev => prev.includes('generated') ? prev : [...prev, 'generated']);
       setIsSidebarOpen(true);
     }
   }, [allLocations]);
 
   const handleSetCustomHomeBase = React.useCallback(async (query: string) => {
+    console.log('handleSetCustomHomeBase called with:', query);
+
+    // RESET
+    if (!query) {
+      console.log('Resetting home base');
+      setHomeBase(null);
+      return;
+    }
+
     setIsResolvingBase(true);
+
+    // Check if it's our special JSON format from Autocomplete
+    if (query.startsWith('JSON:')) {
+      try {
+        const data = JSON.parse(query.substring(5));
+        console.log('Parsed place data:', data);
+        const newBase: LocationData = {
+          id: 'home-base',
+          name: data.name,
+          description: 'My Home Base',
+          category: 'Places of Interests', // dummy category
+          coordinates: [data.lat, data.lng],
+          rating: 0,
+          imageUrl: '',
+          tips: '',
+        };
+        console.log('Setting new home base:', newBase);
+        setHomeBase(newBase);
+        setIsResolvingBase(false);
+        return;
+      } catch (e) {
+        console.error("Failed to parse place data", e);
+      }
+    }
+
+    // Fallback to AI resolution (shouldn't be reached with new UI, but good for safety)
+    console.log('Using AI resolution fallback');
     const result = await resolveLocation(query);
     if (result) {
       const newBase: LocationData = {
@@ -169,98 +222,110 @@ function App() {
     setActiveTrail(trail);
     setCurrentRoute(null); // Deselect generated route
     setSelectedLocation(null); // Clear selected location
+    setIsSidebarOpen(true); // Auto-expand drawer when trail is selected
   }, []);
 
+  // Debug log for render
+  console.log('🖼️ App Render: Passing selectedLocation to MapDisplay:', selectedLocation?.id);
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-100 font-sans">
-
-
-
-      {/* AI Float Button (Mobile only when chat closed) */}
-      {!isChatOpen && (
-        <div className="fixed bottom-6 right-6 z-40 md:hidden">
-          <button
-            onClick={() => setIsChatOpen(true)}
-            className="p-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full shadow-lg text-white active:scale-95 transition-transform"
-          >
-            <Sparkles size={24} />
-          </button>
-        </div>
-      )}
-
-      {/* Sidebar Container */}
-      {/* Sidebar Container (Bottom Sheet on Mobile, Sidebar on Desktop) */}
-      <div className={`
-        fixed z-30 transition-all duration-300 ease-in-out shadow-2xl
-        md:relative md:inset-auto md:w-auto md:h-full md:shadow-none md:translate-x-0
-        ${isSidebarOpen
-          ? 'inset-x-0 bottom-0 h-[85vh] rounded-t-2xl md:rounded-none' // Expanded Mobile
-          : 'inset-x-0 bottom-0 h-24 rounded-t-2xl md:rounded-none md:w-0 md:overflow-hidden' // Collapsed Mobile (show header) / Desktop Hidden
-        }
-        md:block
-      `}>
-        <Sidebar
-          locations={allLocations}
-          selectedLocation={selectedLocation}
-          onSelectLocation={handleSelectLocation}
-          onCloseSelection={() => setSelectedLocation(null)}
-          onAskAI={handleAskAI}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-          homeBase={homeBase}
-          onSetCustomHomeBase={handleSetCustomHomeBase}
-          isResolvingBase={isResolvingBase}
-          onSelectTrail={handleSelectTrail}
-          activeTrailId={activeTrail?.id || null}
-          generatedTrails={generatedTrails}
-
-          // Navigation Props
-          activeMainTab={mainTab}
-          onMainTabChange={setMainTab}
-          activeListTab={listTab}
-          onListTabChange={setListTab}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
-      </div>
-
-      {/* Main Map Area */}
-      <div className="flex-1 relative h-full">
-        <MapDisplay
-          locations={allLocations}
-          selectedLocation={selectedLocation}
-          onSelectLocation={handleSelectLocation}
-          activeRoute={currentRoute}
-          activeTrail={activeTrail}
-          homeBase={homeBase}
-        />
-
-        {/* Floating AI Button (Desktop) */}
+    <APIProvider apiKey={apiKey}>
+      <div className="flex h-screen w-screen overflow-hidden bg-gray-100 font-sans">
+        {/* ... content ... */}
         {!isChatOpen && (
-          <div className="hidden md:block absolute bottom-8 right-8 z-20">
+          <div className="fixed bottom-6 right-6 z-40 md:hidden">
             <button
               onClick={() => setIsChatOpen(true)}
-              className="flex items-center space-x-2 px-5 py-3 bg-white hover:bg-gray-50 text-gray-800 rounded-full shadow-xl border border-gray-100 transition-all hover:-translate-y-1 group"
+              className="p-4 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full shadow-lg text-white active:scale-95 transition-transform"
             >
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-1.5 rounded-full text-white group-hover:rotate-12 transition-transform">
-                <Sparkles size={16} />
-              </div>
-              <span className="font-medium">Generate AI Itinerary</span>
+              <Sparkles size={24} />
             </button>
           </div>
         )}
+
+        {/* Sidebar Container */}
+        {/* Sidebar Container (Bottom Sheet on Mobile, Sidebar on Desktop) */}
+        <div
+          onClick={() => {
+            // Auto-expand if minimized and clicked
+            if (!isSidebarOpen) {
+              console.log('📱 Minimized drawer clicked, expanding...');
+              setIsSidebarOpen(true);
+            }
+          }}
+          className={`
+        fixed z-30 transition-all duration-500 ease-in-out shadow-2xl
+        md:relative md:inset-auto md:h-full md:shadow-none md:translate-x-0
+        ${isSidebarOpen
+              ? 'inset-x-0 bottom-0 h-[60vh] rounded-t-2xl md:rounded-none md:w-auto' // Expanded
+              : 'inset-x-0 bottom-0 h-32 rounded-t-2xl md:rounded-none md:w-0 md:overflow-hidden' // Minimized/Collapsed - increased from h-20
+            }
+        md:block
+      `}>
+          <Sidebar
+            locations={allLocations}
+            selectedLocation={selectedLocation}
+            onSelectLocation={handleSelectLocation}
+            onCloseSelection={() => setSelectedLocation(null)}
+            onAskAI={handleAskAI}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+            homeBase={homeBase}
+            onSetCustomHomeBase={handleSetCustomHomeBase}
+            isResolvingBase={isResolvingBase}
+            onSelectTrail={handleSelectTrail}
+            activeTrailId={activeTrail?.id || null}
+            generatedTrails={generatedTrails}
+
+            // Navigation Props
+            activeMainTab={mainTab}
+            onMainTabChange={setMainTab}
+            activeListTabs={activeListTabs}
+            onListTabChange={setActiveListTabs}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
+        </div>
+
+        {/* Main Map Area */}
+        <div className="flex-1 relative h-full transition-all duration-500">
+          <MapDisplay
+            locations={allLocations}
+            selectedLocation={selectedLocation}
+            onSelectLocation={handleSelectLocation}
+            activeRoute={currentRoute}
+            activeTrail={activeTrail}
+            homeBase={homeBase}
+            onMapClick={() => setIsSidebarOpen(false)}
+          />
+
+          {/* Floating AI Button (Desktop) */}
+          {!isChatOpen && (
+            <div className="hidden md:block absolute bottom-8 right-8 z-20">
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="flex items-center space-x-2 px-5 py-3 bg-white hover:bg-gray-50 text-gray-800 rounded-full shadow-xl border border-gray-100 transition-all hover:-translate-y-1 group"
+              >
+                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 p-1.5 rounded-full text-white group-hover:rotate-12 transition-transform">
+                  <Sparkles size={16} />
+                </div>
+                <span className="font-medium">Generate AI Itinerary</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* AI Chat Interface */}
+        <ChatInterface
+          locations={allLocations} // Pass all locations so AI knows what is currently available
+          initialContext={chatContext}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onRouteGenerated={handleRouteGenerated}
+          onLocationsGenerated={handleLocationsGenerated}
+        />
+
       </div>
-
-      {/* AI Chat Interface */}
-      <ChatInterface
-        locations={allLocations} // Pass all locations so AI knows what is currently available
-        initialContext={chatContext}
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        onRouteGenerated={handleRouteGenerated}
-        onLocationsGenerated={handleLocationsGenerated}
-      />
-
-    </div>
+    </APIProvider>
   );
 }
 

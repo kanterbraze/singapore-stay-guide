@@ -147,7 +147,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div className={`fixed z-30 transition-all duration-300 shadow-2xl bg-white border border-gray-200 overflow-hidden flex flex-col
       ${isMinimized
         ? 'bottom-4 right-4 w-72 h-14 rounded-full'
-        : 'bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[450px] md:h-[650px] md:rounded-2xl h-[60vh] rounded-t-2xl'
+        : 'bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[450px] md:h-[80vh] md:rounded-2xl h-[60vh] rounded-t-2xl'
       }`}
     >
       {/* Header */}
@@ -157,7 +157,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       >
         <div className="flex items-center text-white space-x-2">
           <Sparkles size={20} />
-          <h3 className="font-semibold text-sm md:text-base">Travel Assistant</h3>
+          <h3 className="font-semibold text-xs md:text-sm">Travel Assistant</h3>
         </div>
         <div className="flex items-center text-white/80 space-x-2">
           {!isMinimized && messages.length > 0 && (
@@ -193,8 +193,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <button
               onClick={() => setActiveTab('assistant')}
               className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'assistant'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               Chat Assistant
@@ -202,8 +202,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <button
               onClick={() => setActiveTab('discover')}
               className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 flex items-center justify-center gap-2 ${activeTab === 'discover'
-                  ? 'border-purple-600 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               <PlusCircle size={14} />
@@ -215,11 +215,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {activeTab === 'assistant' ? (
             // --- ASSISTANT TAB ---
             <>
-              <div className="flex-1 bg-gray-50 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 bg-gray-50 overflow-y-auto p-3 space-y-3">
                 {messages.length === 0 && (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 space-y-4 px-4">
-                    <div className="bg-white p-4 rounded-full shadow-sm">
-                      <Compass size={32} className="text-blue-500" />
+                  <div className="flex flex-col items-center justify-center h-full text-center text-gray-500 space-y-3 px-4">
+                    <div className="bg-white p-3 rounded-full shadow-sm">
+                      <Compass size={28} className="text-blue-500" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-700">Plan your Singapore adventure</p>
@@ -228,21 +228,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <div className="grid grid-cols-1 gap-2 w-full max-w-xs">
                       <button
                         onClick={() => suggestPrompt("Suggest a 1-day Heritage Trail visiting historical sites. Keep it walkable.")}
-                        className="text-xs bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors text-left flex items-center"
+                        className="text-xs bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors text-left flex items-center gap-2"
                       >
-                        🏛️ 1-Day Heritage Trail (Walkable)
+                        <span>🏛️</span> 1-Day Heritage Trail
                       </button>
                       <button
                         onClick={() => suggestPrompt("Create a Local Food Trail. Group the spots by neighborhood so I can walk.")}
-                        className="text-xs bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors text-left flex items-center"
+                        className="text-xs bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors text-left flex items-center gap-2"
                       >
-                        🍜 Local Food Trail (Clustered)
+                        <span>🍜</span> Local Food Trail
                       </button>
                       <button
                         onClick={() => suggestPrompt("Suggest a nature hiking route. Ensure the path is connected and walkable.")}
-                        className="text-xs bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors text-left flex items-center"
+                        className="text-xs bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors text-left flex items-center gap-2"
                       >
-                        🌳 Connected Nature Route
+                        <span>🌳</span> Nature Route
                       </button>
                     </div>
                   </div>
@@ -251,14 +251,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 {messages.map((msg) => (
                   <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div
-                      className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${msg.role === 'user'
-                          ? 'bg-blue-600 text-white rounded-br-none'
-                          : msg.isError
-                            ? 'bg-red-50 text-red-600 border border-red-100'
-                            : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                      className={`max-w-[90%] rounded-2xl p-3 text-sm shadow-sm ${msg.role === 'user'
+                        ? 'bg-blue-600 text-white rounded-br-none'
+                        : msg.isError
+                          ? 'bg-red-50 text-red-600 border border-red-100'
+                          : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
                         }`}
                     >
-                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-a:text-blue-400 hover:prose-a:underline">
+                      <div className="prose prose-sm max-w-none prose-p:my-2 prose-a:text-blue-400 hover:prose-a:underline">
                         <ReactMarkdown
                           components={{
                             a: ({ node, ...props }) => <a {...props} target="_blank" rel="noopener noreferrer" />
@@ -273,7 +273,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-white rounded-2xl rounded-bl-none p-3 shadow-sm border border-gray-100 flex items-center space-x-2">
-                      <Loader2 size={16} className="animate-spin text-blue-500" />
+                      <Loader2 size={14} className="animate-spin text-blue-500" />
                       <span className="text-xs text-gray-500">Thinking...</span>
                     </div>
                   </div>
@@ -289,24 +289,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask for a route or recommendation..."
-                    className="w-full pl-4 pr-12 py-3 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-gray-900 placeholder-gray-500"
+                    placeholder="Ask for a route..."
+                    className="w-full pl-3 pr-10 py-2.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-gray-900 placeholder-gray-500"
                     disabled={isLoading}
                   />
                   <button
                     onClick={() => handleSend()}
                     disabled={!input.trim() || isLoading}
-                    className={`absolute right-2 p-2 rounded-lg transition-all ${input.trim() && !isLoading
-                        ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    className={`absolute right-1.5 p-1.5 rounded-lg transition-all ${input.trim() && !isLoading
+                      ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}
                   >
-                    <Send size={16} />
+                    <Send size={14} />
                   </button>
                 </div>
-                <div className="text-[10px] text-gray-400 text-center mt-2 flex justify-center items-center gap-1">
-                  <Sparkles size={10} />
-                  Powered by Gemini • Using Function Calling
+                <div className="text-[10px] text-gray-400 text-center mt-1.5 flex justify-center items-center gap-1">
+                  <Sparkles size={8} />
+                  <span>Powered by Gemini</span>
                 </div>
               </div>
             </>
