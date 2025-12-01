@@ -312,49 +312,54 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </>
           ) : (
             // --- GENERATOR TAB (DISCOVER) ---
-            <div className="flex-1 bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-              <div className="bg-purple-100 p-4 rounded-full mb-4">
-                <PlusCircle size={32} className="text-purple-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Generate & Add Locations</h3>
-              <p className="text-gray-500 text-sm mb-8 max-w-[80%]">
-                Type a theme to create a new list of locations and add them to your interactive map guide.
-              </p>
-
-              <div className="w-full max-w-sm space-y-4">
-                <div>
-                  <label className="block text-left text-xs font-semibold text-gray-500 mb-1 ml-1 uppercase tracking-wide">Enter Theme</label>
-                  <input
-                    type="text"
-                    value={discoverTheme}
-                    onChange={(e) => setDiscoverTheme(e.target.value)}
-                    placeholder="e.g., Cyberpunk, Hidden Speakeasies, 1920s..."
-                    className="w-full p-4 rounded-xl border border-gray-300 shadow-sm bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-gray-900 placeholder-gray-400"
-                  />
+            <div className="flex-1 bg-gray-50 flex flex-col max-h-full overflow-y-auto">
+              <div className="flex flex-col items-center justify-start p-4 text-center">
+                <div className="bg-purple-100 p-3 rounded-full mb-3">
+                  <PlusCircle size={24} className="text-purple-600" />
                 </div>
-                <button
-                  onClick={handleDiscoverSubmit}
-                  disabled={!discoverTheme.trim()}
-                  className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <Sparkles size={18} />
-                  Generate & Add to Map
-                </button>
+                <h3 className="text-lg font-bold text-gray-800 mb-2">Generate & Add Locations</h3>
+                <p className="text-xs text-gray-600 mb-1 max-w-[90%] leading-relaxed">
+                  Describe a theme or vibe, and AI will curate personalized locations for your Singapore adventure.
+                </p>
+                <p className="text-[10px] text-gray-400 mb-6 max-w-[85%]">
+                  Try: "Hidden speakeasies", "Cyberpunk cafes", "Romantic rooftops", "Best laksa spots"
+                </p>
 
-                <div className="pt-8">
-                  <p className="text-xs text-gray-400 mb-3">Or try these themes:</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {['Cyberpunk', 'Romantic Rooftops', 'Minimalist Cafes', 'Haunted Places'].map(theme => (
-                      <button
-                        key={theme}
-                        onClick={() => {
-                          setDiscoverTheme(theme);
-                        }}
-                        className="text-xs px-3 py-1 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:text-purple-600 transition-colors"
-                      >
-                        {theme}
-                      </button>
-                    ))}
+                <div className="w-full max-w-md space-y-3">
+                  <div>
+                    <label className="block text-left text-[10px] font-semibold text-gray-500 mb-1.5 ml-1 uppercase tracking-wide">Enter Your Theme</label>
+                    <textarea
+                      value={discoverTheme}
+                      onChange={(e) => setDiscoverTheme(e.target.value)}
+                      placeholder="Describe what you're looking for... (e.g., '1920s Art Deco architecture', 'Late-night hawker centers', 'Instagram-worthy murals')"
+                      rows={3}
+                      className="w-full p-4 rounded-xl border border-gray-300 shadow-sm bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm text-gray-900 placeholder-gray-400 resize-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleDiscoverSubmit}
+                    disabled={!discoverTheme.trim()}
+                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-md hover:shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Sparkles size={16} />
+                    Generate & Add to Map
+                  </button>
+
+                  <div className="pt-6">
+                    <p className="text-[10px] text-gray-400 mb-2">Quick suggestions:</p>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {['Cyberpunk', 'Romantic Rooftops', 'Minimalist Cafes', 'Haunted Places', 'Street Art', 'Hidden Gems'].map(theme => (
+                        <button
+                          key={theme}
+                          onClick={() => {
+                            setDiscoverTheme(theme);
+                          }}
+                          className="text-[10px] px-2.5 py-1 bg-white border border-gray-200 rounded-full hover:border-purple-300 hover:text-purple-600 hover:bg-purple-50 transition-colors"
+                        >
+                          {theme}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
