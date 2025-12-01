@@ -3,15 +3,5 @@
     "outputDirectory": "dist",
     "devCommand": "npm run dev",
     "installCommand": "npm install",
-    "framework": "vite",
-    "rewrites": [
-        {
-            "source": "/api/gemini",
-            "destination": "/api/gemini.js"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/index.html"
-        }
-    ]
+    "framework": "vite"
 }
