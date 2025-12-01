@@ -112,7 +112,12 @@ export default async function handler(req, res) {
     }
 
     try {
+        console.log('Incoming request body:', JSON.stringify(req.body));
         const { history, message, existingLocations } = req.body;
+
+        if (!message) {
+            throw new Error('Message is required');
+        }
 
         // Append existing locations to system instruction
         let currentSystemInstruction = SYSTEM_INSTRUCTION;
@@ -137,7 +142,10 @@ export default async function handler(req, res) {
             // TODO: Add history support if needed
         }
 
-        const response = await chat.sendMessage(message);
+        console.log('Sending message to Gemini:', message);
+        const response = await chat.sendMessage({
+            parts: [{ text: typeof message === 'string' ? message : JSON.stringify(message) }]
+        });
 
         // Extract function calls
         const functionCalls = response.functionCalls;
