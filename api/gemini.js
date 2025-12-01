@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 
-// Initialize Gemini - using API_KEY to match Vercel environment variable
-const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize Gemini - using GEMINI_API_KEY to match Vercel environment variable
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Tool Definitions
 const suggestRouteTool = {
