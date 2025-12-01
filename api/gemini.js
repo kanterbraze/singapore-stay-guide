@@ -133,7 +133,7 @@ export default async function handler(req, res) {
             // TODO: Add history support if needed
         }
 
-        const response = await chat.sendMessage({ message });
+        const response = await chat.sendMessage(message);
 
         // Extract function calls
         const functionCalls = response.functionCalls;

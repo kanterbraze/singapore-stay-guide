@@ -164,7 +164,7 @@ export const sendMessageToGemini = async (chat: Chat, message: string, history: 
           message,
           history: history.map(h => ({
             role: h.role,
-            parts: [{ text: h.parts[0].text }] // Simplify history for transport
+            parts: [{ text: h.parts?.[0]?.text || '' }] // Simplify history for transport
           })),
           existingLocations: existingLocations.map(l => l.name).join(', ')
         })
