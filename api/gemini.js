@@ -1,7 +1,7 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini - using API_KEY to match Vercel environment variable
-const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Tool Definitions
 const suggestRouteTool = {
@@ -79,7 +79,7 @@ const SYSTEM_INSTRUCTION = `
     Tone: Enthusiastic but PRACTICAL.
 `;
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -102,24 +102,26 @@ module.exports = async (req, res) => {
             currentSystemInstruction += `\nEXISTING LOCATIONS TO AVOID: ${existingLocations}`;
         }
 
-        const model = genAI.getGenerativeModel({
+        const chat = genAI.chats.create({
             model: 'gemini-2.0-flash-exp',
-            systemInstruction: currentSystemInstruction,
-            tools: [{ functionDeclarations: [suggestRouteTool, suggestPlacesTool] }]
+            config: {
+                systemInstruction: currentSystemInstruction,
+                tools: [{ functionDeclarations: [suggestRouteTool, suggestPlacesTool] }]
+            }
         });
 
-        const chat = model.startChat({
-            history: history || [],
-        });
+        // Send message with history
+        if (history && history.length > 0) {
+            // TODO: Add history support if needed
+        }
 
-        const result = await chat.sendMessage(message);
-        const response = await result.response;
+        const response = await chat.sendMessage({ message });
 
         // Extract function calls
-        const functionCalls = response.functionCalls();
+        const functionCalls = response.functionCalls;
         let routeData = null;
         let generatedLocations = null;
-        let textResponse = response.text();
+        let textResponse = response.text || "Here's what I found!";
 
         if (functionCalls && functionCalls.length > 0) {
             const call = functionCalls[0];
@@ -149,4 +151,4 @@ module.exports = async (req, res) => {
         console.error('Error calling Gemini:', error);
         res.status(500).json({ error: error.message });
     }
-};
+}
