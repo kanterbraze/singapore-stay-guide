@@ -165,10 +165,16 @@ export default async function handler(req, res) {
             } else if (call.name === 'suggest_places') {
                 const args = call.args;
                 generatedLocations = args.locations.map((loc, index) => ({
-                    ...loc,
                     id: `gen-${Date.now()}-${index}`,
-                    isGenerated: true,
+                    name: loc.name,
+                    description: loc.description,
+                    category: loc.category,
+                    coordinates: [loc.latitude, loc.longitude], // ✅ Transform to array format
+                    rating: loc.rating,
                     imageUrl: `https://picsum.photos/800/600?random=${Math.floor(Math.random() * 1000)}`,
+                    priceRange: loc.priceRange,
+                    tips: loc.tips,
+                    isGenerated: true,
                     socialProof: loc.social_proof || []
                 }));
                 textResponse = `I found ${generatedLocations.length} places for you.`;
