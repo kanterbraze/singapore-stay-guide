@@ -2,12 +2,15 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, FunctionDeclaration, Type } from "@google/genai";
 import { LocationData, Route } from "../types";
 
+const PROXY_URL = import.meta.env.VITE_GEMINI_PROXY_URL;
+
 let aiClient: GoogleGenAI | null = null;
 
-const getClient = (): GoogleGenAI => {
+const getClient = (): GoogleGenAI | null => {
   if (!aiClient) {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
+      if (PROXY_URL) return null; // Allow missing key if proxy is set
       throw new Error('Gemini API key not configured. Set VITE_GEMINI_PROXY_URL or API_KEY in .env.local');
     }
     console.warn('⚠️ Using direct Gemini API mode. For production, set VITE_GEMINI_PROXY_URL to use secure backend proxy.');
@@ -88,6 +91,11 @@ const suggestPlacesTool: FunctionDeclaration = {
 export const createTravelChat = (locations: LocationData[]): Chat => {
   const client = getClient();
 
+  if (!client) {
+    // Return a dummy chat object for Proxy mode
+    return {} as unknown as Chat;
+  }
+
   // Construct a system instruction that gives the model context about the "Sheet" data
   // This helps it avoid duplicating existing curated locations
   const existingNames = locations.map(l => l.name).join(', ');
@@ -136,8 +144,7 @@ export interface GeminiResponse {
   generatedLocations?: LocationData[];
 }
 
-const PROXY_URL = import.meta.env.VITE_GEMINI_PROXY_URL;
-console.log('🔍 PROXY_URL detected:', PROXY_URL);
+
 
 export const sendMessageToGemini = async (chat: Chat, message: string, history: any[] = [], existingLocations: LocationData[] = []): Promise<GeminiResponse> => {
   // PROXY MODE (Secure)
@@ -270,6 +277,7 @@ export const resolveLocation = async (query: string): Promise<{ name: string, co
 
   // DIRECT MODE
   const client = getClient();
+  if (!client) throw new Error("Gemini API key not configured for direct mode.");
   try {
     const response = await client.models.generateContent({
       model: 'gemini-2.5-flash',
