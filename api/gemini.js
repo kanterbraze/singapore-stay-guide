@@ -120,8 +120,12 @@ export default async function handler(req, res) {
             currentSystemInstruction += `\nEXISTING LOCATIONS TO AVOID: ${existingLocations}`;
         }
 
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error('GEMINI_API_KEY is not set in environment variables');
+        }
+
         const chat = genAI.chats.create({
-            model: 'gemini-2.0-flash-thinking-exp-01-21',
+            model: 'gemini-2.0-flash',
             config: {
                 systemInstruction: currentSystemInstruction,
                 tools: [{ functionDeclarations: [suggestRouteTool, suggestPlacesTool] }]

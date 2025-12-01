@@ -170,7 +170,11 @@ export const sendMessageToGemini = async (chat: Chat, message: string, history: 
         })
       });
 
-      if (!response.ok) throw new Error('Proxy call failed');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Proxy call failed:', response.status, response.statusText, errorText);
+        throw new Error(`Proxy call failed: ${response.status} ${errorText}`);
+      }
       return await response.json();
     } catch (error) {
       console.error("Proxy Error:", error);

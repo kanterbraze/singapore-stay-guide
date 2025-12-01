@@ -107,7 +107,7 @@ functions.http('geminiProxy', async (req, res) => {
         }
 
         const model = genAI.getGenerativeModel({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.0-flash-thinking-exp-01-21',
             systemInstruction: currentSystemInstruction,
             tools: [{ functionDeclarations: [suggestRouteTool, suggestPlacesTool] }]
         });
