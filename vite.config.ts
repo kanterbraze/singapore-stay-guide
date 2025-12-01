@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/', // Changed from '/singapore-stay-guide/' for Vercel deployment
     server: {
-      port: 3000,
+      port: process.env.PORT ? parseInt(process.env.PORT) : 5173,
       host: '0.0.0.0',
     },
     plugins: [react()],

@@ -131,21 +131,15 @@ export default async function handler(req, res) {
 
         const chat = genAI.chats.create({
             model: 'gemini-2.0-flash',
+            history: history || [],
             config: {
                 systemInstruction: currentSystemInstruction,
                 tools: [{ functionDeclarations: [suggestRouteTool, suggestPlacesTool] }]
             }
         });
 
-        // Send message with history
-        if (history && history.length > 0) {
-            // TODO: Add history support if needed
-        }
-
         console.log('Sending message to Gemini:', message);
-        const response = await chat.sendMessage({
-            parts: [{ text: typeof message === 'string' ? message : JSON.stringify(message) }]
-        });
+        const response = await chat.sendMessage({ message: typeof message === 'string' ? message : JSON.stringify(message) });
 
         // Extract function calls
         const functionCalls = response.functionCalls;
