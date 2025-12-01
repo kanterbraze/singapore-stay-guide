@@ -150,7 +150,17 @@ export default async function handler(req, res) {
         if (functionCalls && functionCalls.length > 0) {
             const call = functionCalls[0];
             if (call.name === 'suggest_route') {
-                routeData = call.args;
+                // Transform route data to match frontend RouteStep format
+                const args = call.args;
+                routeData = {
+                    title: args.title,
+                    steps: args.steps.map(step => ({
+                        name: step.name,
+                        coordinates: [step.latitude, step.longitude], // Convert to [lat, lng] array
+                        time: step.time,
+                        description: step.description
+                    }))
+                };
                 textResponse = "I've generated a route for you! Check the map.";
             } else if (call.name === 'suggest_places') {
                 const args = call.args;
