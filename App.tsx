@@ -115,6 +115,7 @@ function App() {
     }
 
     setIsSidebarOpen(true); // Open sidebar on mobile when marker clicked
+    setIsChatOpen(false); // Minimize chat to show location details in sidebar
   }, []);
 
   const handleAskAI = React.useCallback((location: LocationData) => {
