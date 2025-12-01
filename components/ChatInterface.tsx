@@ -45,7 +45,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   useEffect(() => {
     if (initialContext && isOpen) {
       setActiveTab('assistant');
-      handleSend(`Tell me more about ${initialContext} and what makes it special.`);
+      handleSend(`Tell me more interesting facts and insider tips about ${initialContext}. Please provide information only, don't generate new routes or add new locations.`);
     }
   }, [initialContext, isOpen]);
 
