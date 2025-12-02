@@ -1,5 +1,5 @@
 
-export type LocationCategory = 
+export type LocationCategory =
   | 'Food (Local Hawker)'
   | 'Food (Restaurants)'
   | 'Hiking, Nature'
@@ -29,6 +29,7 @@ export interface ChatMessage {
   text: string;
   timestamp: Date;
   isError?: boolean;
+  action?: 'view_ai_picks';
 }
 
 export enum ViewMode {
@@ -57,5 +58,5 @@ export interface Trail {
   steps: RouteStep[];
 }
 
-export type MainTab = 'explore' | 'trails';
+export type MainTab = 'explore' | 'ai-picks' | 'trails';
 export type ListTab = 'curated' | 'generated';

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatMessage, LocationData, Route } from '../types';
+import { ChatMessage, LocationData, Route, MainTab } from '../types';
 import { Send, Sparkles, X, Minimize2, Maximize2, Loader2, MapPin, Compass, Search, RotateCcw, PlusCircle } from 'lucide-react';
 import { GoogleGenAI, Chat } from '@google/genai';
 import { createTravelChat, sendMessageToGemini } from '../services/geminiService';
@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   onClose: () => void;
   onRouteGenerated: (route: Route) => void;
   onLocationsGenerated: (locations: LocationData[]) => void;
+  onSwitchToTab?: (tab: MainTab) => void;
 }
 
 type Tab = 'assistant' | 'discover';
@@ -23,7 +24,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   isOpen,
   onClose,
   onRouteGenerated,
-  onLocationsGenerated
+  onLocationsGenerated,
+  onSwitchToTab
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('assistant');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -103,8 +105,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         const systemMsg: ChatMessage = {
           id: (Date.now() + 3).toString(),
           role: 'model',
-          text: `✨ **I've found ${response.generatedLocations.length} new places and added them to your map!**`,
-          timestamp: new Date()
+          text: `✨ **I've found ${response.generatedLocations.length} new places and added them to your map!**\n\n${response.generatedLocations.map(l => `• **${l.name}** (${l.category})`).join('\n')}`,
+          timestamp: new Date(),
+          action: 'view_ai_picks'
         }
         setMessages(prev => [...prev, systemMsg]);
       }
@@ -267,6 +270,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           {msg.text}
                         </ReactMarkdown>
                       </div>
+                      {msg.action === 'view_ai_picks' && onSwitchToTab && (
+                        <button
+                          onClick={() => onSwitchToTab('ai-picks')}
+                          className="mt-2 text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded-lg font-medium transition-colors flex items-center gap-1 w-fit"
+                        >
+                          <Sparkles size={12} />
+                          View in AI Picks
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -366,8 +378,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           )}
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 

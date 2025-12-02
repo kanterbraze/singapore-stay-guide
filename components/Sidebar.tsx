@@ -140,6 +140,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
     // Filter based on Category only (no more tab filtering)
     const displayLocations = locations.filter(loc => {
+        // Tab Filter
+        if (activeMainTab === 'explore' && loc.isGenerated) return false;
+        if (activeMainTab === 'ai-picks' && !loc.isGenerated) return false;
+
         // Category Filter
         if (selectedCategory !== 'All' && loc.category !== selectedCategory) return false;
 
@@ -196,12 +200,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 </span>
                                 {selectedLocation.isGenerated && (
                                     <span className="inline-flex items-center px-2 py-1 bg-indigo-500 text-white text-xs font-semibold rounded gap-1 shadow-sm">
-                                        <Sparkles size={10} /> AI Discovery
+                                        <Sparkles size={12} /> AI Discovery
                                     </span>
                                 )}
                                 {selectedLocation.distanceFromBase && (
                                     <span className="inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded gap-1 shadow-sm">
-                                        <Navigation size={10} /> {selectedLocation.distanceFromBase} from Base
+                                        <Navigation size={12} /> {selectedLocation.distanceFromBase} from Base
                                     </span>
                                 )}
                             </div>
@@ -229,7 +233,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {selectedLocation.socialProof && selectedLocation.socialProof.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                                 {selectedLocation.socialProof.map((proof, idx) => (
-                                    <span key={idx} className="px-2 py-1 bg-purple-50 text-purple-700 border border-purple-100 rounded-md text-[10px] font-medium uppercase tracking-wide">
+                                    <span key={idx} className="px-2 py-1 bg-purple-50 text-purple-700 border border-purple-100 rounded-md text-xs font-medium uppercase tracking-wide">
                                         {proof}
                                     </span>
                                 ))}
@@ -402,13 +406,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex bg-gray-200/80 p-0.5 rounded-lg shrink-0">
                         <button
                             onClick={() => onMainTabChange('explore')}
-                            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeMainTab === 'explore' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeMainTab === 'explore' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             Explore
                         </button>
                         <button
+                            onClick={() => onMainTabChange('ai-picks')}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all flex items-center gap-1 ${activeMainTab === 'ai-picks' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            <Sparkles size={10} /> AI Picks
+                        </button>
+                        <button
                             onClick={() => onMainTabChange('trails')}
-                            className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${activeMainTab === 'trails' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeMainTab === 'trails' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             Trails
                         </button>
@@ -416,15 +426,15 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="w-px h-4 bg-gray-300 shrink-0 mx-1"></div>
 
-                    {/* Sub Filters (Only for Explore) */}
-                    {activeMainTab === 'explore' && (
+                    {/* Sub Filters (For Explore and AI Picks) */}
+                    {(activeMainTab === 'explore' || activeMainTab === 'ai-picks') && (
                         <>
                             {/* Categories */}
                             {CATEGORIES.filter(c => c !== 'All').map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => onSelectCategory(selectedCategory === cat ? 'All' : cat)}
-                                    className={`shrink-0 whitespace-nowrap px-2 py-1 rounded-full text-[10px] font-medium border transition-colors ${selectedCategory === cat
+                                    className={`shrink-0 whitespace-nowrap px-2 py-1 rounded-full text-xs font-medium border transition-colors ${selectedCategory === cat
                                         ? 'bg-gray-900 text-white border-gray-900'
                                         : 'bg-white text-gray-500 border-gray-200'
                                         }`}
@@ -440,7 +450,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24 md:pb-4 bg-white">
 
-                {activeMainTab === 'explore' ? (
+                {activeMainTab !== 'trails' ? (
                     // EXPLORE LIST
                     <>
                         {displayLocations.map((loc) => (
@@ -455,7 +465,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             >
                                 {/* Base Distance Badge */}
                                 {loc.distanceFromBase && (
-                                    <div className="absolute top-0 right-0 bg-green-100 text-green-800 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">
+                                    <div className="absolute top-0 right-0 bg-green-100 text-green-800 text-[10px] font-bold px-1.5 py-0.5 rounded-bl-lg z-10">
                                         {loc.distanceFromBase} away
                                     </div>
                                 )}
@@ -472,20 +482,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     <h3 className={`font-semibold truncate transition-colors flex items-center gap-2 text-sm ${loc.isGenerated ? 'text-purple-900 group-hover:text-purple-700' : 'text-gray-900 group-hover:text-blue-600'}`}>
                                         {loc.name}
                                     </h3>
-                                    <p className={`text-[10px] font-medium mb-0.5 ${loc.isGenerated ? 'text-purple-600' : 'text-blue-600'}`}>
+                                    <p className={`text-xs font-medium mb-0.5 ${loc.isGenerated ? 'text-purple-600' : 'text-blue-600'}`}>
                                         {loc.category}
                                     </p>
 
                                     {/* Social Proof Snippet for List View */}
                                     {loc.isGenerated && loc.socialProof && loc.socialProof[0] && (
-                                        <p className="text-[10px] text-gray-500 italic truncate">
+                                        <p className="text-xs text-gray-500 italic truncate">
                                             "{loc.socialProof[0]}"
                                         </p>
                                     )}
 
                                     {!loc.isGenerated && (
-                                        <div className="flex items-center text-[10px] text-gray-400 mt-0.5">
-                                            <MapPin size={10} className="mr-1" />
+                                        <div className="flex items-center text-xs text-gray-400 mt-0.5">
+                                            <MapPin size={12} className="mr-1" />
                                             <span>View details</span>
                                         </div>
                                     )}
@@ -524,9 +534,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                                             {isAiTrail && <Sparkles size={14} className="text-purple-600" />}
                                             <h3 className={`font-bold text-sm ${isAiTrail ? 'text-purple-900' : 'text-gray-900'}`}>{trail.name}</h3>
                                         </div>
-                                        <span className={`text-[9px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded-full ${isAiTrail ? 'text-purple-600 bg-purple-100' : 'text-orange-600 bg-orange-100'
+                                        <span className={`text-[10px] uppercase font-bold tracking-wide px-1.5 py-0.5 rounded-full ${isAiTrail ? 'text-purple-600 bg-purple-100' : 'text-orange-600 bg-orange-100'
                                             }`}>
-                                            {trail.category}
+                                            {isAiTrail ? 'AI Recommended' : trail.category}
                                         </span>
                                     </div>
                                     <div className="text-[10px] font-semibold text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded inline-block mb-1">
